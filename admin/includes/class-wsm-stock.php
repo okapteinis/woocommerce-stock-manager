@@ -181,18 +181,33 @@ class WSM_Stock {
 		$all = $query->found_posts;
 
 		$pages         = (int) ceil( $all / $this->limit );
-		$passed_offset = ( ! empty( $_GET['offset'] ) ) ? wc_clean( wp_unslash( $_GET['offset'] ) ) : 0; // phpcs:ignore
-		$current       = ( ! empty( $passed_offset ) ) ? intval( $passed_offset ) : 1;
+		$passed_offset = ( ! empty( $_GET['offset'] ) ) ? absint( $_GET['offset'] ) : 0; // phpcs:ignore
+		$current       = ( ! empty( $passed_offset ) ) ? absint( $passed_offset ) : 1;
 
-		$html         = '';
-		$html        .= '<div class="stock-manager-pagination">';
-		$query_string = ( ! empty( $_SERVER['QUERY_STRING'] ) ) ? wc_clean( wp_unslash( $_SERVER['QUERY_STRING'] ) ) : ''; // phpcs:ignore
+		$html  = '';
+		$html .= '<div class="stock-manager-pagination">';
+
 		if ( 1 !== $pages ) {
+			// Build base URL with existing query parameters.
+			$base_url = admin_url( 'admin.php' );
+			$page     = ( ! empty( $_GET['page'] ) ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore
+
 			for ( $i = 1; $i <= $pages; $i++ ) {
-				if ( $current === $i ) {
-					$html .= '<span class="btn btn-default">' . $i . '</span>';
+				// Ensure page number is integer for security.
+				$page_num = absint( $i );
+
+				if ( $current === $page_num ) {
+					$html .= '<span class="btn btn-default">' . esc_html( $page_num ) . '</span>';
 				} else {
-					$html .= '<a class="btn btn-primary" href="' . admin_url() . 'admin.php?' . $query_string . '&offset=' . $i . '">' . $i . '</a>';
+					// Use add_query_arg for safe URL building.
+					$page_url = add_query_arg(
+						array(
+							'page'   => $page,
+							'offset' => $page_num,
+						),
+						$base_url
+					);
+					$html    .= '<a class="btn btn-primary" href="' . esc_url( $page_url ) . '">' . esc_html( $page_num ) . '</a>';
 				}
 			}
 		}

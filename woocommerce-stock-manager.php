@@ -104,21 +104,25 @@ function wsm_search_by_title_only( $search, &$wp_query ) {
 	if ( empty( $search ) ) {
 		return $search; // skip processing - no search term in query.
 	}
-	$q         = $wp_query->query_vars;
-	$n         = ! empty( $q['exact'] ) ? '' : '%';
-	$search    = '';
-	$searchand = '';
+	$q              = $wp_query->query_vars;
+	$n              = ! empty( $q['exact'] ) ? '' : '%';
+	$search_clauses = array();
+
+	// Build search clauses using $wpdb->prepare() for each term.
 	foreach ( (array) $q['search_terms'] as $term ) {
-		$term      = esc_sql( $wpdb->esc_like( $term ) );
-		$search   .= "{$searchand}($wpdb->posts.post_title LIKE '{$n}{$term}{$n}')";
-		$searchand = ' AND ';
+		$like_term        = $wpdb->esc_like( $term );
+		$search_clauses[] = $wpdb->prepare( "$wpdb->posts.post_title LIKE %s", $n . $like_term . $n );
 	}
-	if ( ! empty( $search ) ) {
-		$search = " AND ({$search}) ";
+
+	if ( ! empty( $search_clauses ) ) {
+		$search = ' AND (' . implode( ' AND ', $search_clauses ) . ') ';
 		if ( ! is_user_logged_in() ) {
-			$search .= " AND ($wpdb->posts.post_password = '') ";
+			$search .= $wpdb->prepare( " AND ($wpdb->posts.post_password = %s) ", '' );
 		}
+	} else {
+		$search = '';
 	}
+
 	return $search;
 }
 
