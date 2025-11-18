@@ -206,11 +206,24 @@ class WSM_Stock {
 	 * Save all meta data.
 	 *
 	 * @param array $data The column key to name map.
+	 * @return WP_Error|void WP_Error on failure, void on success.
 	 */
 	public function save_all( $data ) {
+		// Check user capabilities.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'Unauthorized: You do not have permission to save product data.', 'woocommerce-stock-manager' )
+			);
+		}
+
 		$post = ( ! empty( $_POST ) ) ? wc_clean( wp_unslash( $_POST ) ) : array(); // phpcs:ignore
 		foreach ( $data['product_id'] as $item ) {
-			WSM_Save::save_one_item( $post, $item );
+			$result = WSM_Save::save_one_item( $post, $item );
+			// Check if save_one_item returned an error.
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 		}
 	}
 
@@ -218,8 +231,17 @@ class WSM_Stock {
 	 * Save all meta data
 	 *
 	 * @param array $data The column display data.
+	 * @return WP_Error|void WP_Error on failure, void on success.
 	 */
 	public function save_filter_display( $data ) {
+		// Check user capabilities.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'Unauthorized: You do not have permission to modify display settings.', 'woocommerce-stock-manager' )
+			);
+		}
+
 		$option = array();
 		if ( ! empty( $data['thumbnail'] ) ) {
 			$option['thumbnail'] = 'display';
