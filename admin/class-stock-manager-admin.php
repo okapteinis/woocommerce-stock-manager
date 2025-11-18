@@ -176,20 +176,6 @@ class Stock_Manager_Admin {
 				wp_set_script_translations( 'woocommerce-stock-manager-admin-script-react', 'stock-manager', STOCKDIR . 'languages' );
 			}
 		}
-
-		// Klawoo subscribe.
-		$wsm_dismiss_admin_notice = get_option( 'wsm_dismiss_subscribe_admin_notice', false );
-		if ( empty( $wsm_dismiss_admin_notice ) ) {
-			$is_wsm_admin = is_wsm_admin_page();
-			if ( $is_wsm_admin ) {
-				$params = array(
-					'ajax_nonce' => wp_create_nonce( 'wsm_update' ),
-				);
-				wp_localize_script( 'woocommerce-stock-manager-admin-script-w', 'ajax_object', $params );
-				wp_enqueue_script( 'woocommerce-stock-manager-admin-script-w', plugins_url( 'assets/js/subscribe.js', __FILE__ ), array( 'jquery' ), WSM_PLUGIN_VERSION, true );
-
-			}
-		}
 	}
 
 	/**
@@ -354,96 +340,6 @@ class Stock_Manager_Admin {
 			include_once 'views/log-history.php';
 		} else {
 			include_once 'views/log.php';
-		}
-	}
-
-	/**
-	 * Function to show notice in the admin.
-	 */
-	public function wsm_add_subscribe_notice() {
-		$wsm_dismiss_admin_notice = get_option( 'wsm_dismiss_subscribe_admin_notice', false );
-
-		if ( empty( $wsm_dismiss_admin_notice ) ) {
-			?>
-			<style type="text/css" class="wsm-subscribe">
-				#wsm_promo_msg {
-					display: block !important;
-					background-color: #f2f6fc;
-					border-left-color: #5850ec;
-				}
-				#wsm_promo_msg table {
-					width: 100%;
-					padding-bottom: 0.25em;
-				}
-				#wsm_dashicon {
-					padding: 0.5em;
-					width: 3%;
-				}
-				#wsm_promo_msg_content {
-					padding: 0.5em;
-				}
-				#wsm_promo_msg .dashicons.dashicons-awards {
-					font-size: 5em;
-					color: #b08d57;
-					margin-left: -0.2em;
-					margin-bottom: 0.65em;
-				}
-				.wsm_headline {
-					padding: 0.5em 0;
-					font-size: 1.4em;
-				}
-				form.wsm_klawoo_subscribe {
-					padding: 0.5em 0;
-					margin-block-end: 0 !important;
-					font-size: 1.1em;
-				}
-				form.wsm_klawoo_subscribe #email {
-					width: 14em;
-					height: 1.75em;
-				}
-				form.wsm_klawoo_subscribe #wsm_gdpr_agree {
-					margin-left: 0.5em;
-					vertical-align: sub;
-				}
-				form.wsm_klawoo_subscribe .wsm_gdpr_label {
-					margin-right: 0.5em;
-				}
-				form.wsm_klawoo_subscribe #wsm_submit {
-					font-size: 1.3em;
-					line-height: 0em;
-					margin-top: 0;
-					font-weight: bold;
-					background: #5850ec;
-					border-color: #5850ec;
-				}
-				.wsm_success {
-					font-size: 1.5em;
-					font-weight: bold;
-				}
-			</style>
-			<div id="wsm_promo_msg" class="updated fade">
-				<table>
-					<tbody> 
-						<tr>
-							<td id="wsm_dashicon"> 
-								<span class="dashicons dashicons-awards"></span>
-							</td> 
-							<td id="wsm_promo_msg_content">
-								<div class="wsm_headline">Get latest hacks & tips to better manage your store using Stock Manager for WooCommerce!</div>
-								<form name="wsm_klawoo_subscribe" class="wsm_klawoo_subscribe" action="#" method="POST" accept-charset="utf-8">									
-									<input type="email" class="regular-text ltr" name="email" id="email" placeholder="Your email address" required="required" />
-									<input type="checkbox" name="wsm_gdpr_agree" id="wsm_gdpr_agree" value="1" required="required" />
-									<label for="wsm_gdpr_agree" class="wsm_gdpr_label">I have read and agreed to your <a href="https://www.storeapps.org/privacy-policy/?utm_source=wsm&utm_medium=in_app_subscribe&utm_campaign=in_app_subscribe" target="_blank">Privacy Policy</a>.</label>
-									<input type="hidden" name="list" value="3pFQTnTsH763gAKTuvOGhPzA"/>
-									<?php wp_nonce_field( 'sa-wsm-subscribe', 'sa_wsm_sub_nonce' ); ?>
-									<input type="submit" name="submit" id="wsm_submit" class="button button-primary" value="Subscribe" />
-								</form>
-							</td>
-							</tr>
-					</tbody> 
-				</table> 
-			</div>
-			<?php
 		}
 	}
 

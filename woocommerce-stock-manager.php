@@ -312,63 +312,6 @@ function wsm_get_csv_file() {
 
 }
 
-add_action( 'wp_ajax_wsm_klawoo_subscribe', 'wsm_klawoo_subscribe' );
-/**
- * Function for Klawoo subscribe.
- */
-function wsm_klawoo_subscribe() {
-	$url = 'http://app.klawoo.com/subscribe';
-	if ( ! empty( $_POST ) ) {
-		$params = ( ! empty( $_POST['params'] ) ) ? wc_clean( wp_unslash( $_POST['params'] ) ) : array(); // phpcs:ignore
-	} else {
-		exit();
-	}
-
-	$post_sa_wsm_nonce = ( ! empty( $params['sa_wsm_sub_nonce'] ) ) ? wc_clean( wp_unslash( $params['sa_wsm_sub_nonce'] ) ) : '';
-	if ( ! empty( $post_sa_wsm_nonce ) && wp_verify_nonce( $post_sa_wsm_nonce, 'sa-wsm-subscribe' ) ) {
-		if ( empty( $params['name'] ) ) {
-			$params['name'] = '';
-		}
-
-		$method = 'POST';
-		$qs     = http_build_query( $params );
-
-		$options = array(
-			'timeout' => 15,
-			'method'  => $method,
-		);
-
-		if ( 'POST' === $method ) {
-			$options['body'] = $qs;
-		} else {
-			if ( strpos( $url, '?' ) !== false ) {
-				$url .= '&' . $qs;
-			} else {
-				$url .= '?' . $qs;
-			}
-		}
-
-		$response = wp_remote_request( $url, $options );
-		if ( 200 === wp_remote_retrieve_response_code( $response ) ) {
-			$data = $response['body'];
-
-			if ( 'error' !== $data ) {
-				$message_start = substr( $data, strpos( $data, '<body>' ) + 6 );
-				$remove        = substr( $message_start, strpos( $message_start, '</body>' ) );
-				$message       = trim( str_replace( $remove, '', $message_start ) );
-
-				// Hide the in-app lead notice.
-				update_option( 'wsm_dismiss_subscribe_admin_notice', true, 'no' );
-
-				echo wp_kses_post( $message );
-				exit();
-			}
-		}
-	}
-
-	exit();
-}
-
 /**
  * Function to return plugin data.
  *
@@ -403,29 +346,3 @@ function is_wsm_admin_page() {
 	}
 	return false;
 }
-
-/**
- * Function to show SA in app offers in WSM if any.
- *
- * @since: 2.5.2.
- */
-function wsm_may_be_show_sa_in_app_offer() {
-
-	if ( ! class_exists( 'SA_WSM_In_App_Offer' ) && file_exists( STOCKDIR . 'sa-includes/class-sa-wsm-in-app-offer.php' ) ) {
-		include_once STOCKDIR . 'sa-includes/class-sa-wsm-in-app-offer.php';
-
-		$is_wsm_admin = is_wsm_admin_page();
-
-		$args     = array(
-			'file'           => STOCKDIR . 'sa-includes/',
-			'prefix'         => 'wsm',              // prefix/slug of your plugin.
-			'option_name'    => 'sa_wsm_offer_bfcm_2024',
-			'campaign'       => 'sa_bfcm_2024',
-			'start'          => '2024-11-26 07:00:00',
-			'end'            => '2024-12-06 06:30:00',
-			'is_plugin_page' => $is_wsm_admin ? true : false,   // page where you want to show offer, do not send this if no plugin page is there and want to show offer on Products page.
-		);
-		$sa_offer = SA_WSM_In_App_Offer::get_instance( $args );
-	}
-}
-add_action( 'plugins_loaded', 'wsm_may_be_show_sa_in_app_offer' );
