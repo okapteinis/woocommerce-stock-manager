@@ -54,6 +54,8 @@ if ( ! defined( 'WSM_PLUGIN_VERSION' ) ) {
 // Public-Facing Functionality.
 
 require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-save.php';
+require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-logger.php';
+require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-validator.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'public/class-stock-manager.php';
 
