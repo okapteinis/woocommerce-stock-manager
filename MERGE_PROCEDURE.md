@@ -337,4 +337,4 @@ git push origin nightly --force
 ## License
 
 This document is part of the WooCommerce Stock Manager project.
-Licensed under GPLv2 - see LICENSE file for details.
+Licensed under CC BY 4.0 - see LICENSE file for details.
