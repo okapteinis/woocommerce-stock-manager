@@ -1,18 +1,11 @@
-DUAL LICENSE
-
-This project contains code under two licenses:
-
 ================================================================================
-1. ORIGINAL PLUGIN CODE - GPLv2
+GNU GENERAL PUBLIC LICENSE - ALL PLUGIN CODE
 ================================================================================
 
-The original WooCommerce Stock Manager plugin code is licensed under:
-
-GNU GENERAL PUBLIC LICENSE
 Version 2, June 1991
 
-Copyright (C) StoreApps
-https://www.storeapps.org/
+Copyright (C) 2020-2025 StoreApps
+Copyright (C) 2025 Ojārs Kapteinis (modifications)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,40 +23,74 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Full license text: http://www.gnu.org/licenses/gpl-2.0.html
 
-The original LICENSE.txt file from the plugin is also included in this repository.
-
 ================================================================================
-2. CUSTOM MODIFICATIONS AND DOCUMENTATION - CC BY-NC-ND 4.0
+APPLIES TO
 ================================================================================
 
-Custom modifications, documentation, and development work by Ojārs Kapteinis
-are licensed under:
+The GPLv2 license applies to ALL plugin code including:
+- All PHP files (*.php)
+- All JavaScript files (*.js)
+- All CSS files (*.css)
+- All image assets used by the plugin
+- All original code and modifications
+- Build artifacts and compiled assets
 
-Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+This includes both:
+1. Original code by StoreApps (2020-2025)
+2. Modifications and enhancements by Ojārs Kapteinis (2025)
+
+All derivative works must also be licensed under GPLv2 or compatible license.
+
+================================================================================
+DOCUMENTATION LICENSE - CC BY 4.0
+================================================================================
+
+Documentation files ONLY are licensed under:
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+This applies ONLY to:
+- README.md
+- claude.md
+- NOTICE file
+- Other .md documentation files
 
 Copyright (c) 2025 Ojārs Kapteinis
 
 You are free to:
-- Share — copy and redistribute the material in any medium or format
+- Share and redistribute in any medium or format
+- Adapt, remix, transform, and build upon the material for any purpose
 
 Under the following terms:
-- Attribution — You must give appropriate credit, provide a link to the
-  license, and indicate if changes were made.
-- NonCommercial — You may not use the material for commercial purposes.
-- NoDerivatives — If you remix, transform, or build upon the material, you
-  may not distribute the modified material.
+- Attribution — You must give appropriate credit and indicate if changes were made
 
-Full license text: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
 
 ================================================================================
-NOTICE
+ATTRIBUTION AND NOTICES
 ================================================================================
 
-This repository is an independent fork of the WooCommerce Stock Manager plugin
-for custom development purposes. The original plugin is available at:
-https://wordpress.org/plugins/woocommerce-stock-manager/
+This is an independent fork of Stock Manager for WooCommerce by StoreApps.
 
-When in doubt about which license applies to specific code:
-- Original plugin code and functionality: GPLv2
-- Custom modifications and additions: CC BY-NC-ND 4.0
-- Documentation (README.md, etc.): CC BY-NC-ND 4.0
+Original Plugin:
+- Name: Stock Manager for WooCommerce
+- Author: StoreApps
+- URL: https://wordpress.org/plugins/woocommerce-stock-manager/
+- Original License: GPLv2
+
+Fork Maintainer:
+- Ojārs Kapteinis
+- Email: ojars@kapteinis.lv
+
+Development Assistance:
+- Co-developed with Claude AI
+
+================================================================================
+IMPORTANT LEGAL NOTICE
+================================================================================
+
+WordPress.org and WooCommerce plugin directory requirements mandate that ALL
+plugin code must be 100% GPL-compatible. This fork complies with those
+requirements by licensing all code under GPLv2.
+
+The original LICENSE.txt file from the StoreApps plugin is included for
+reference and remains valid for the original code portions.
