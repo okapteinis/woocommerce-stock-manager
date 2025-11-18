@@ -4,10 +4,11 @@
  * Plugin URI: https://www.storeapps.org/woocommerce-plugins/
  * Description: Manage product's stock and price in your WooCommerce store. Export/Import inventory, track history, sort and more...
  * Version: 3.4.0
- * Author: StoreApps
+ * Author: StoreApps, Ojārs Kapteinis
  * Author URI: https://www.storeapps.org/
  * Developer: StoreApps
  * Developer URI: https://www.storeapps.org/
+ * Contributors: storeapps, okapteinis
  * Requires at least: 5.0.0
  * Tested up to: 6.8
  * Requires PHP: 5.6+
@@ -19,8 +20,13 @@
  * License: GNU General Public License v2.0
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  * Copyright (c) 2020-2025 StoreApps. All rights reserved.
+ * Copyright (c) 2025 Ojārs Kapteinis (modifications). All rights reserved.
  *
  * @package woocommerce-stock-manager
+ *
+ * This is an independent fork with custom modifications.
+ * Original plugin: https://wordpress.org/plugins/woocommerce-stock-manager/
+ * See NOTICE file for complete attribution and licensing information.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -48,6 +54,8 @@ if ( ! defined( 'WSM_PLUGIN_VERSION' ) ) {
 // Public-Facing Functionality.
 
 require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-save.php';
+require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-logger.php';
+require_once plugin_dir_path( __FILE__ ) . 'admin/includes/class-wsm-validator.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'public/class-stock-manager.php';
 
@@ -104,21 +112,25 @@ function wsm_search_by_title_only( $search, &$wp_query ) {
 	if ( empty( $search ) ) {
 		return $search; // skip processing - no search term in query.
 	}
-	$q         = $wp_query->query_vars;
-	$n         = ! empty( $q['exact'] ) ? '' : '%';
-	$search    = '';
-	$searchand = '';
+	$q              = $wp_query->query_vars;
+	$n              = ! empty( $q['exact'] ) ? '' : '%';
+	$search_clauses = array();
+
+	// Build search clauses using $wpdb->prepare() for each term.
 	foreach ( (array) $q['search_terms'] as $term ) {
-		$term      = esc_sql( $wpdb->esc_like( $term ) );
-		$search   .= "{$searchand}($wpdb->posts.post_title LIKE '{$n}{$term}{$n}')";
-		$searchand = ' AND ';
+		$like_term        = $wpdb->esc_like( $term );
+		$search_clauses[] = $wpdb->prepare( "$wpdb->posts.post_title LIKE %s", $n . $like_term . $n );
 	}
-	if ( ! empty( $search ) ) {
-		$search = " AND ({$search}) ";
+
+	if ( ! empty( $search_clauses ) ) {
+		$search = ' AND (' . implode( ' AND ', $search_clauses ) . ') ';
 		if ( ! is_user_logged_in() ) {
-			$search .= " AND ($wpdb->posts.post_password = '') ";
+			$search .= $wpdb->prepare( " AND ($wpdb->posts.post_password = %s) ", '' );
 		}
+	} else {
+		$search = '';
 	}
+
 	return $search;
 }
 
@@ -312,63 +324,6 @@ function wsm_get_csv_file() {
 
 }
 
-add_action( 'wp_ajax_wsm_klawoo_subscribe', 'wsm_klawoo_subscribe' );
-/**
- * Function for Klawoo subscribe.
- */
-function wsm_klawoo_subscribe() {
-	$url = 'http://app.klawoo.com/subscribe';
-	if ( ! empty( $_POST ) ) {
-		$params = ( ! empty( $_POST['params'] ) ) ? wc_clean( wp_unslash( $_POST['params'] ) ) : array(); // phpcs:ignore
-	} else {
-		exit();
-	}
-
-	$post_sa_wsm_nonce = ( ! empty( $params['sa_wsm_sub_nonce'] ) ) ? wc_clean( wp_unslash( $params['sa_wsm_sub_nonce'] ) ) : '';
-	if ( ! empty( $post_sa_wsm_nonce ) && wp_verify_nonce( $post_sa_wsm_nonce, 'sa-wsm-subscribe' ) ) {
-		if ( empty( $params['name'] ) ) {
-			$params['name'] = '';
-		}
-
-		$method = 'POST';
-		$qs     = http_build_query( $params );
-
-		$options = array(
-			'timeout' => 15,
-			'method'  => $method,
-		);
-
-		if ( 'POST' === $method ) {
-			$options['body'] = $qs;
-		} else {
-			if ( strpos( $url, '?' ) !== false ) {
-				$url .= '&' . $qs;
-			} else {
-				$url .= '?' . $qs;
-			}
-		}
-
-		$response = wp_remote_request( $url, $options );
-		if ( 200 === wp_remote_retrieve_response_code( $response ) ) {
-			$data = $response['body'];
-
-			if ( 'error' !== $data ) {
-				$message_start = substr( $data, strpos( $data, '<body>' ) + 6 );
-				$remove        = substr( $message_start, strpos( $message_start, '</body>' ) );
-				$message       = trim( str_replace( $remove, '', $message_start ) );
-
-				// Hide the in-app lead notice.
-				update_option( 'wsm_dismiss_subscribe_admin_notice', true, 'no' );
-
-				echo wp_kses_post( $message );
-				exit();
-			}
-		}
-	}
-
-	exit();
-}
-
 /**
  * Function to return plugin data.
  *
@@ -403,29 +358,3 @@ function is_wsm_admin_page() {
 	}
 	return false;
 }
-
-/**
- * Function to show SA in app offers in WSM if any.
- *
- * @since: 2.5.2.
- */
-function wsm_may_be_show_sa_in_app_offer() {
-
-	if ( ! class_exists( 'SA_WSM_In_App_Offer' ) && file_exists( STOCKDIR . 'sa-includes/class-sa-wsm-in-app-offer.php' ) ) {
-		include_once STOCKDIR . 'sa-includes/class-sa-wsm-in-app-offer.php';
-
-		$is_wsm_admin = is_wsm_admin_page();
-
-		$args     = array(
-			'file'           => STOCKDIR . 'sa-includes/',
-			'prefix'         => 'wsm',              // prefix/slug of your plugin.
-			'option_name'    => 'sa_wsm_offer_bfcm_2024',
-			'campaign'       => 'sa_bfcm_2024',
-			'start'          => '2024-11-26 07:00:00',
-			'end'            => '2024-12-06 06:30:00',
-			'is_plugin_page' => $is_wsm_admin ? true : false,   // page where you want to show offer, do not send this if no plugin page is there and want to show offer on Products page.
-		);
-		$sa_offer = SA_WSM_In_App_Offer::get_instance( $args );
-	}
-}
-add_action( 'plugins_loaded', 'wsm_may_be_show_sa_in_app_offer' );

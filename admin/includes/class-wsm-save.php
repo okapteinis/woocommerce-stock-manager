@@ -20,13 +20,22 @@ class WSM_Save {
 	 *
 	 * @param array $data       The column key to name map.
 	 * @param ID    $product_id The ID of the product.
+	 * @return WP_Error|void WP_Error on failure, void on success.
 	 */
 	public static function save_one_item( $data, $product_id ) {
+
+		// Check user capabilities.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'Unauthorized: You do not have permission to modify product data.', 'woocommerce-stock-manager' )
+			);
+		}
 
 		$values = self::prepare_data( $data, $product_id );
 
 		if ( ! empty( $values ) ) {
-			self::save_data( $values, $product_id );
+			return self::save_data( $values, $product_id );
 		}
 
 	}
@@ -83,8 +92,17 @@ class WSM_Save {
 	 *
 	 * @param array $data       The column key to name map.
 	 * @param ID    $product_id The ID of the product.
+	 * @return WP_Error|void WP_Error on failure, void on success.
 	 */
 	public static function save_data( $data, $product_id ) {
+
+		// Check user capabilities.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'Unauthorized: You do not have permission to save product data.', 'woocommerce-stock-manager' )
+			);
+		}
 
 		$display_option = get_option( 'wsm_display_option' );
 

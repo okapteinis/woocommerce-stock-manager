@@ -16,8 +16,19 @@ $stock = $this->stock();
  * Save all data.
  */
 $product_id = ( ! empty( $_POST['product_id'] ) ) ? wc_clean( wp_unslash( $_POST['product_id'] ) ) : 0; // phpcs:ignore
-$product    = ( ! empty( $_POST ) ) ? wc_clean( wp_unslash( $_POST ) ) : array(); // phpcs:ignore
+$nonce      = ( ! empty( $_POST['_wpnonce'] ) ) ? wc_clean( wp_unslash( $_POST['_wpnonce'] ) ) : ''; // phpcs:ignore
+
 if ( ! empty( $product_id ) ) {
+	// Verify nonce for security.
+	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wsm_save_all' ) ) {
+		wp_die(
+			esc_html__( 'Security check failed. Please refresh the page and try again.', 'woocommerce-stock-manager' ),
+			esc_html__( 'Security Error', 'woocommerce-stock-manager' ),
+			array( 'response' => 403 )
+		);
+	}
+
+	$product = ( ! empty( $_POST ) ) ? wc_clean( wp_unslash( $_POST ) ) : array(); // phpcs:ignore
 	$stock->save_all( $product );
 	// add redirect.
 }
@@ -26,7 +37,19 @@ if ( ! empty( $product_id ) ) {
  * Save display option.
  */
 $page_filter_display = ( ! empty( $_POST['page-filter-display'] ) ) ? wc_clean( wp_unslash( $_POST['page-filter-display'] ) ) : ''; // phpcs:ignore
+$nonce_display       = ( ! empty( $_POST['_wpnonce_display'] ) ) ? wc_clean( wp_unslash( $_POST['_wpnonce_display'] ) ) : ''; // phpcs:ignore
+
 if ( ! empty( $page_filter_display ) ) {
+	// Verify nonce for display option save.
+	if ( empty( $nonce_display ) || ! wp_verify_nonce( $nonce_display, 'wsm_save_display' ) ) {
+		wp_die(
+			esc_html__( 'Security check failed. Please refresh the page and try again.', 'woocommerce-stock-manager' ),
+			esc_html__( 'Security Error', 'woocommerce-stock-manager' ),
+			array( 'response' => 403 )
+		);
+	}
+
+	$product = ( ! empty( $_POST ) ) ? wc_clean( wp_unslash( $_POST ) ) : array(); // phpcs:ignore
 	$stock->save_filter_display( $product );
 }
 

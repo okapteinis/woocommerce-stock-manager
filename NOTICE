@@ -1,0 +1,134 @@
+================================================================================
+NOTICE - Stock Manager for WooCommerce (Independent Fork)
+================================================================================
+
+This is an independent fork of the Stock Manager for WooCommerce plugin
+originally developed by StoreApps.
+
+ORIGINAL PLUGIN INFORMATION
+================================================================================
+
+Plugin Name: Stock Manager for WooCommerce
+Original Author: StoreApps
+Contributors: storeapps, niravmehta, mansi shah, Tarun.Parswani, gomathip,
+              Musilda, abhaypatel01
+Original Plugin URL: https://wordpress.org/plugins/woocommerce-stock-manager/
+Original Repository: https://plugins.svn.wordpress.org/woocommerce-stock-manager/
+
+Copyright (C) 2020-2025 StoreApps
+Website: https://www.storeapps.org/
+
+
+FORK INFORMATION
+================================================================================
+
+This fork is maintained for custom development purposes.
+
+Fork Maintainer: Ojārs Kapteinis
+Email: ojars@kapteinis.lv
+Fork Contributors: okapteinis
+Development Assistance: Claude AI
+
+Copyright (C) 2025 Ojārs Kapteinis (modifications and enhancements)
+
+
+LICENSE
+================================================================================
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the LICENSE file for complete license information.
+
+
+MODIFICATIONS IN THIS FORK
+================================================================================
+
+This fork includes the following significant modifications:
+
+Security Enhancements:
+- Removal of external API integrations and third-party dependencies
+- Comprehensive CSRF protection with nonce verification
+- User capability checks on all data modification operations
+- Secure CSV file upload with size limits and random filenames
+- SQL injection prevention using parameterized queries
+- XSS prevention with proper output escaping
+- Enhanced input validation and sanitization
+
+Performance Improvements:
+- Database indexes on stock_log table
+- Automatic stock log cleanup mechanism
+- Query caching with WordPress transients
+
+Code Quality:
+- Error logging utility (WSM_Logger)
+- Input validation helper (WSM_Validator)
+- Improved error handling for file and database operations
+- Enhanced internationalization
+
+Documentation:
+- Comprehensive security audit documentation (claude.md)
+- Updated README with fork information
+- This NOTICE file
+
+For a complete list of changes, see the git commit history.
+
+
+DISCLAIMER
+================================================================================
+
+This is an INDEPENDENT FORK for custom development purposes.
+
+For the OFFICIAL version of Stock Manager for WooCommerce and official support:
+- Visit: https://wordpress.org/plugins/woocommerce-stock-manager/
+- Contact: StoreApps at https://www.storeapps.org/
+
+The fork maintainer is not affiliated with StoreApps, and this fork is not
+an official version of the plugin.
+
+
+ACKNOWLEDGMENTS
+================================================================================
+
+This fork is built upon the excellent work of the StoreApps team and the
+WooCommerce Stock Manager plugin contributors. We acknowledge and appreciate
+their original development efforts.
+
+Special thanks to:
+- StoreApps team for creating and maintaining the original plugin
+- WordPress and WooCommerce communities
+- All contributors to the original plugin
+
+
+TRADEMARKS
+================================================================================
+
+"WooCommerce" is a registered trademark of Automattic, Inc.
+"WordPress" is a registered trademark of the WordPress Foundation.
+"Stock Manager for WooCommerce" is the original work of StoreApps.
+
+This fork maintains the plugin name to clearly indicate its origin and
+relationship to the original plugin.
+
+
+FOR MORE INFORMATION
+================================================================================
+
+Documentation: See README.md and claude.md files
+Security Audit: See claude.md for comprehensive security analysis
+License Details: See LICENSE file
+Changelog: See git commit history
+
+Issue Reporting: For this fork, report issues to the fork maintainer
+Official Support: For the official plugin, contact StoreApps

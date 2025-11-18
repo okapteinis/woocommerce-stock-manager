@@ -164,69 +164,124 @@ function stock_auto_utf( $s ) {
 				if ( isset( $_POST['upload'] ) && ! empty( $_FILES ) ) {
 					$post_sa_wsm_nonce = ( ! empty( $_POST['sa_wsm_nonce'] ) ) ? wc_clean( wp_unslash( $_POST['sa_wsm_nonce'] ) ) : ''; // phpcs:ignore
 					if ( ! empty( $post_sa_wsm_nonce ) && wp_verify_nonce( $post_sa_wsm_nonce, 'sa-wsm-import' ) ) {
-						// Allowed filetypes for import.
-						$valid_filetypes = array(
-							'csv' => 'text/csv',
-						);
 
-						// Retrieve the file type from the file name.
-						$uploaded_file = $_FILES['uploadFile']['name']; // phpcs:ignore
-						$filetype      = wp_check_filetype( wc_clean( wp_unslash( $uploaded_file ) ), $valid_filetypes );
+						// Validate file size (max 5MB).
+						$max_file_size = 5 * 1024 * 1024; // 5MB in bytes.
+						if ( ! empty( $_FILES['uploadFile']['size'] ) && $_FILES['uploadFile']['size'] > $max_file_size ) { // phpcs:ignore
+							echo '<p class="error">' . esc_html__( 'Error: File size exceeds maximum limit of 5MB.', 'woocommerce-stock-manager' ) . '</p>';
+						} elseif ( ! empty( $_FILES['uploadFile']['error'] ) && UPLOAD_ERR_OK !== $_FILES['uploadFile']['error'] ) { // phpcs:ignore
+							echo '<p class="error">' . esc_html__( 'Error: File upload failed. Please try again.', 'woocommerce-stock-manager' ) . '</p>';
+						} else {
+							// Allowed filetypes for import.
+							$valid_filetypes = array(
+								'csv' => 'text/csv',
+							);
 
-						// Check if file type is valid.
-						if ( in_array( $filetype['type'], $valid_filetypes, true ) ) {
-							$target_dir = STOCKDIR . 'admin/views/upload/';
-							$target_dir = $target_dir . basename( $uploaded_file );
+							// Retrieve the file type from the file name.
+							$uploaded_file = $_FILES['uploadFile']['name']; // phpcs:ignore
+							$filetype      = wp_check_filetype( wc_clean( wp_unslash( $uploaded_file ) ), $valid_filetypes );
 
-							if ( move_uploaded_file( $_FILES['uploadFile']['tmp_name'], $target_dir ) ) { // phpcs:ignore
+							// Check if file type is valid.
+							if ( in_array( $filetype['type'], $valid_filetypes, true ) ) {
+								// Create upload directory if it doesn't exist.
+								$upload_dir = STOCKDIR . 'admin/views/upload/';
+								if ( ! file_exists( $upload_dir ) ) {
+									wp_mkdir_p( $upload_dir );
 
-								/* translators: 1: Uploaded file name */
-								echo sprintf( esc_html__( 'The file %1$s has been uploaded', 'woocommerce-stock-manager' ), basename( $uploaded_file ) ); // phpcs:ignore
+									// Create .htaccess to block direct access.
+									$htaccess_file = $upload_dir . '.htaccess';
+									$htaccess_content = "# Deny direct access to uploaded files\n";
+									$htaccess_content .= "<Files *>\n";
+									$htaccess_content .= "Order Allow,Deny\n";
+									$htaccess_content .= "Deny from all\n";
+									$htaccess_content .= "</Files>\n";
+									file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore
+								}
 
-								$row    = 1;
-								$handle = fopen( $target_dir, 'r' ); // phpcs:ignore
-								if ( false !== $handle ) {
+								// Generate random filename to prevent directory traversal.
+								$random_filename = 'wsm_import_' . wp_generate_password( 12, false ) . '.csv';
+								$target_file     = $upload_dir . $random_filename;
 
-									// assigning to $data to not consider first row of CSV file.
-									while ( ( $data = fgetcsv( $handle, 1000, ',' ) ) !== false ) { // phpcs:ignore
-										$num = count( $data );
+								if ( move_uploaded_file( $_FILES['uploadFile']['tmp_name'], $target_file ) ) { // phpcs:ignore
 
-										$product_id   = stock_auto_utf( $data[0] );
-										$sku          = stock_auto_utf( $data[1] );
-										$manage_stock = stock_auto_utf( $data[3] );
-										$stock_status = stock_auto_utf( $data[4] );
-										$backorders   = stock_auto_utf( $data[5] );
-										$stock        = stock_auto_utf( $data[6] );
+									echo '<p class="success">' . esc_html__( 'File uploaded successfully. Processing import...', 'woocommerce-stock-manager' ) . '</p>';
 
-										if ( 1 !== $row ) {
-											if ( ! empty( $product_id ) ) {
-												$values = array(
-													'sku' => $sku,
-													'manage_stock' => $manage_stock,
-													'stock_status' => $stock_status,
-													'backorders' => $backorders,
-													'stock' => $stock,
-												);
+									$row    = 1;
+									$handle = fopen( $target_file, 'r' ); // phpcs:ignore
+									if ( false !== $handle ) {
 
-												WSM_Save::save_one_item( $values, $product_id );
+										// Validate CSV structure by checking first row.
+										$first_row = fgetcsv( $handle, 1000, ',' );
+										if ( false === $first_row || count( $first_row ) < 7 ) {
+											echo '<p class="error">' . esc_html__( 'Error: Invalid CSV file structure. Please use the correct format.', 'woocommerce-stock-manager' ) . '</p>';
+											fclose( $handle ); // phpcs:ignore
+											// Delete the uploaded file.
+											if ( file_exists( $target_file ) ) {
+												unlink( $target_file ); // phpcs:ignore
+											}
+										} else {
+											// Process CSV file.
+											$processed_count = 0;
+											$error_count     = 0;
 
-												/* translators: 1: P tag opening 2: Updated Product ID 3. Closing p tag */
-												echo sprintf( esc_html__( '%1$s Product with ID %2$s was updated. %3$s', 'woocommerce-stock-manager' ), '<p>', wp_kses_post( $product_id ), '</p>' );
+											while ( ( $data = fgetcsv( $handle, 1000, ',' ) ) !== false ) { // phpcs:ignore
+												if ( count( $data ) < 7 ) {
+													continue; // Skip malformed rows.
+												}
+
+												$product_id   = absint( stock_auto_utf( $data[0] ) );
+												$sku          = sanitize_text_field( stock_auto_utf( $data[1] ) );
+												$manage_stock = sanitize_text_field( stock_auto_utf( $data[3] ) );
+												$stock_status = sanitize_text_field( stock_auto_utf( $data[4] ) );
+												$backorders   = sanitize_text_field( stock_auto_utf( $data[5] ) );
+												$stock        = absint( stock_auto_utf( $data[6] ) );
+
+												if ( ! empty( $product_id ) ) {
+													$values = array(
+														'sku'          => $sku,
+														'manage_stock' => $manage_stock,
+														'stock_status' => $stock_status,
+														'backorders'   => $backorders,
+														'stock'        => $stock,
+													);
+
+													$result = WSM_Save::save_one_item( $values, $product_id );
+
+													if ( is_wp_error( $result ) ) {
+														$error_count++;
+													} else {
+														$processed_count++;
+														/* translators: %d: Product ID */
+														echo sprintf( esc_html__( 'Product ID %d updated successfully.', 'woocommerce-stock-manager' ), $product_id ) . '<br>';
+													}
+												}
+											}
+											fclose( $handle ); // phpcs:ignore
+
+											/* translators: 1: Processed count 2: Error count */
+											echo '<p class="success"><strong>' . sprintf( esc_html__( 'Import complete! Processed: %1$d, Errors: %2$d', 'woocommerce-stock-manager' ), $processed_count, $error_count ) . '</strong></p>';
+
+											// Clean up: Delete the uploaded file after processing.
+											if ( file_exists( $target_file ) ) {
+												unlink( $target_file ); // phpcs:ignore
 											}
 										}
-										$row++;
-
+									} else {
+										echo '<p class="error">' . esc_html__( 'Error: Unable to read the uploaded file.', 'woocommerce-stock-manager' ) . '</p>';
+										// Delete the uploaded file on error.
+										if ( file_exists( $target_file ) ) {
+											unlink( $target_file ); // phpcs:ignore
+										}
 									}
-									fclose( $handle ); // phpcs:ignore
+								} else {
+									echo '<p class="error">' . esc_html__( 'Error: Failed to save the uploaded file. Please check directory permissions.', 'woocommerce-stock-manager' ) . '</p>';
 								}
 							} else {
-								echo '<p>' . esc_html__( 'Sorry, there was an error uploading your file.', 'woocommerce-stock-manager' ) . '</p>';
+								echo '<p class="error">' . esc_html__( 'Error: Only CSV files are allowed for import.', 'woocommerce-stock-manager' ) . '</p>';
 							}
-						} else {
-							echo '<h3 class="wsm-upload-failed">' . esc_html__( 'Error: You have not uploaded a CSV file.', 'woocommerce-stock-manager' ) . '</h3>';
 						}
 					} else {
-						wp_die( 'Could not verify nonce' );
+						wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'woocommerce-stock-manager' ) );
 					}
 				}
 				?>
