@@ -48,6 +48,9 @@ class Stock_Manager {
 		add_action( 'before_woocommerce_init', array( $this, 'declare_hpos_compatibility' ) );
 		// to filter products based on stock status.
 		add_filter( 'woocommerce_rest_product_object_query', array( $this, 'modify_stock_status_filter' ), 99, 2 );
+
+		// Schedule stock log cleanup.
+		add_action( 'wsm_daily_cleanup', array( $this, 'cleanup_old_logs' ) );
 	}
 
 	/**
@@ -191,14 +194,21 @@ class Stock_Manager {
 	 * Fired for each blog when the plugin is activated.
 	 */
 	private static function single_activate() {
-
+		// Schedule daily cleanup of old stock logs if not already scheduled.
+		if ( ! wp_next_scheduled( 'wsm_daily_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'wsm_daily_cleanup' );
+		}
 	}
 
 	/**
 	 * Fired for each blog when the plugin is deactivated.
 	 */
 	private static function single_deactivate() {
-
+		// Remove scheduled cleanup event.
+		$timestamp = wp_next_scheduled( 'wsm_daily_cleanup' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wsm_daily_cleanup' );
+		}
 	}
 
 	/**
@@ -236,7 +246,9 @@ class Stock_Manager {
                 date_created datetime NOT NULL,
                 product_id bigint(255) NOT NULL,
                 qty int(10) NOT NULL,
-                PRIMARY KEY  (`ID`)
+                PRIMARY KEY  (`ID`),
+                KEY idx_product_id (product_id),
+                KEY idx_date_created (date_created)
             ) $collate;
         ";
 		dbDelta( $table );
@@ -269,6 +281,41 @@ class Stock_Manager {
 			)
 		);
 
+	}
+
+	/**
+	 * Cleanup old stock log entries
+	 *
+	 * Removes stock log entries older than the retention period.
+	 * Default retention is 365 days, filterable via 'wsm_log_retention_days'.
+	 *
+	 * @since 3.4.1
+	 */
+	public function cleanup_old_logs() {
+		global $wpdb;
+
+		// Allow customization of retention period via filter (default: 365 days).
+		$days_to_keep = apply_filters( 'wsm_log_retention_days', 365 );
+		$days_to_keep = absint( $days_to_keep );
+
+		// Ensure at least 30 days retention for safety.
+		if ( $days_to_keep < 30 ) {
+			$days_to_keep = 30;
+		}
+
+		// Delete old records.
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}stock_log
+				 WHERE date_created < DATE_SUB(NOW(), INTERVAL %d DAY)",
+				$days_to_keep
+			)
+		);
+
+		// Log the cleanup action if WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && $deleted ) {
+			error_log( sprintf( 'WSM: Cleaned up %d old stock log entries (retention: %d days)', $deleted, $days_to_keep ) ); // phpcs:ignore
+		}
 	}
 
 	/**
